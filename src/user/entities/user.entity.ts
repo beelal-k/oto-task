@@ -11,7 +11,6 @@ export class User {
     constructor(partial: Partial<User>) {
         Object.assign(this, partial);
         this.createdAt = new Date();
-        this.totalPoints = 0;
         this.isLoggedIn = false;
         this.token = null;
     }

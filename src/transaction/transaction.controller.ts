@@ -1,35 +1,45 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UnauthorizedException } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { SpendPointsDto } from './dto/spend-points.dto';
 
 @Controller('transactions')
 export class TransactionController {
-  constructor(private readonly transactionService: TransactionService) {}
+  constructor(private readonly transactionService: TransactionService) { }
 
   @Post()
   create(@Body() createTransactionDto: CreateTransactionDto) {
-    return this.transactionService.create(createTransactionDto);
+    try {
+      return this.transactionService.create(createTransactionDto);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new Error(`Failed to create transaction: ${error.message}`);
+    }
   }
 
-  @Get()
-  findAll() {
-    return this.transactionService.findAll();
-  }
-  
-  @Get('points/balance')
+  @Get('balance')
   balance() {
-    return this.transactionService.balance();
+    try {
+      return this.transactionService.balance();
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new Error(`Failed to fetch balance: ${error.message}`);
+    }
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.transactionService.findOne(id);
+  @Post('spend')
+  update( @Body() spendPointsDto: SpendPointsDto) {
+    try {
+      return this.transactionService.spend(spendPointsDto);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new Error(`Failed to spend points: ${error.message}`);
+    }
   }
-
-  @Patch('spend/:id')
-  update(@Param('id') id: string, @Body() spendPointsDto: SpendPointsDto) {
-    return this.transactionService.spend(spendPointsDto);
-  }
-
 }

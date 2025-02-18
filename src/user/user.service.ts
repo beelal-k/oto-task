@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
@@ -10,11 +10,12 @@ export class UserService {
   private defaultUser: User;
 
   constructor() {
-    // Create and auto-login a default user when the service starts
+    // Create a new user on service startup
     this.defaultUser = new User({
       _id: '500',
       name: 'Bilal K',
       email: 'bilalk@gmail.com',
+      totalPoints: 10000,
       password: 'password123',
     });
     this.users.push(this.defaultUser);
@@ -44,13 +45,20 @@ export class UserService {
   update(id: string, updateUserDto: UpdateUserDto) {
     const index = this.users.findIndex(user => user._id === id);
     if (index !== -1) {
-      this.users[index] = { ...this.users[index], ...updateUserDto };
+      // Remove protected fields from the update DTO
+      const { _id, email, ...allowedUpdates } = updateUserDto as any;
+      this.users[index] = { ...this.users[index], ...allowedUpdates };
       return this.users[index];
     }
     return null;
   }
 
   remove(id: string) {
+    // check if user is deleting themselves
+    const loggedInUser = this.getLoggedInUser();
+    if (loggedInUser && loggedInUser._id == id) {
+      throw new ForbiddenException('You are not allowed to delete your own account');
+    }
     const index = this.users.findIndex(user => user._id === id);
     if (index !== -1) {
       this.users.splice(index, 1);
@@ -65,9 +73,9 @@ export class UserService {
 
     if (user.password === password) {
       user.isLoggedIn = true;
-      user.token = uuidv4(); // Generate a new token on login
+      user.token = uuidv4();
       
-      // Logout other users asynchronously
+      // Logging out other users asynchronously
       setImmediate(() => {
         this.users
           .filter(u => u._id !== user._id && u.isLoggedIn)
@@ -88,7 +96,7 @@ export class UserService {
       _id: uuidv4(),
       ...createUserDto,
       isLoggedIn: true,
-      token: uuidv4(), // Generate a new token on signup
+      token: uuidv4(),
     });
     this.users.push(user);
     return user;
