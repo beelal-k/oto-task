@@ -73,6 +73,20 @@ Manage transactions with features like:
 - View transaction history
 - Process transaction data
 
+
+#### POST /api/v1/transactions/spend
+This endpoint allows you to spend a certain amount of points.
+
+##### Request Body
+```
+{
+  "points": 300
+}
+```
+
+#### GET /api/v1/transactions/balance
+This endpoint retrieves the current balance of points for all payer accounts for the authenticated user.
+
 ```
 Note: On initialization, a few transactions are created (same as task document)
 ```
