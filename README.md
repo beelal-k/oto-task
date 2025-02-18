@@ -36,13 +36,13 @@ Here's a breakdown of the main components and their responsibilities:
 ```
 src/
 ├── user/              # User-related features
-│   ├── user.service.ts    # Contains business logic for user operations
-│   ├── user.controller.ts # Handles HTTP requests and defines API endpoints
-│   └── user.module.ts     # Entry point that binds controllers and services
+│   ├── user.service.ts    
+│   ├── user.controller.ts 
+│   └── user.module.ts     
 ├── transaction/       # Transaction-related features
-│   ├── transaction.service.ts    # Business logic for transaction operations
-│   ├── transaction.controller.ts # API endpoints for transaction management
-│   └── transaction.module.ts     # Module configuration and dependency binding
+│   ├── transaction.service.ts    
+│   ├── transaction.controller.ts 
+│   └── transaction.module.ts     
 └── app.module.ts      # Main application module that imports all feature modules
 ```
 
@@ -60,24 +60,21 @@ The application includes a user management system with basic operations:
 - Update user details
 - Delete users
 
+```
+Note: On initialization, a default user is created with the following credentials:
+
+Email:  bilalk@gmail.com
+Password: password123
+```
+
 ### Transaction System
 Manage transactions with features like:
 - Create new transactions
 - View transaction history
 - Process transaction data
 
-## Testing
-To ensure everything works correctly, you can run tests:
-
-```bash
-# Run unit tests
-pnpm run test
-
-# Run end-to-end tests
-pnpm run test:e2e
-
-# Check test coverage
-pnpm run test:cov
+```
+Note: On initialization, a few transactions are created (same as task document)
 ```
 
 ## Need Help?
@@ -85,8 +82,3 @@ pnpm run test:cov
 ### Common Issues
 1. **Port already in use**: Stop any running instances or change the port in `src/main.ts`
 2. **Module not found**: Run `pnpm install` again
-
-### Development Tips
-- Use `pnpm run start:dev` during development for auto-reload
-- Check the console for error messages
-- Review the NestJS documentation for detailed explanations
