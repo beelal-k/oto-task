@@ -11,12 +11,16 @@ export class UserController {
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     try {
-      return this.userService.create(createUserDto);
-    } catch (error) {
-      if (error instanceof UnauthorizedException) {
-        throw error;
+      this.userService.create(createUserDto);
+      return {
+        message: 'User created successfully',
+        statusCode: 201,
       }
-      throw new BadRequestException(`Failed to create user: ${error.message}`);
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Internal server error',
+      }
     }
   }
 
@@ -26,57 +30,104 @@ export class UserController {
       return this.userService.findAll();
     } catch (error) {
       if (error instanceof UnauthorizedException) {
-        throw error;
+        return {
+          statusCode: 401,
+          message: 'Unauthorized',
+        }
       }
-      throw new BadRequestException(`Failed to fetch users: ${error.message}`);
+      return {
+        statusCode: 500,
+        message: 'Internal server error',
+      }
     }
   }
 
   @Post('signup')
   signup(@Body() signupDto: CreateUserDto) {
     try {
-      return this.userService.signup(signupDto);
+      this.userService.signup(signupDto);
+      return {
+        message: 'Signup successful',
+        statusCode: 201,
+      }
     } catch (error) {
       if (error instanceof BadRequestException) {
-        throw error;
+        return {
+          statusCode: 400,
+          message: error.message,
+        }
       }
-      throw new BadRequestException(`Failed to signup: ${error.message}`);
+      return {
+        statusCode: 500,
+        message: 'Internal server error',
+      }
     }
   }
 
   @Post('login')
   login(@Body() loginDto: { email: string; password: string }) {
     try {
-      return this.userService.login(loginDto.email, loginDto.password);
+      const result = this.userService.login(loginDto.email, loginDto.password);
+      return {
+        message: 'Login successful',
+        statusCode: 200,
+        data: result,
+      }
     } catch (error) {
       if (error instanceof UnauthorizedException) {
-        throw error;
+        return {
+          statusCode: 401,
+          message: 'Invalid credentials',
+        }
       }
-      throw new BadRequestException(`Failed to login: ${error.message}`);
+      return {
+        statusCode: 500,
+        message: 'Internal server error',
+      }
     }
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     try {
-      return this.userService.update(id, updateUserDto);
+      this.userService.update(id, updateUserDto);
+      return {
+        message: 'User updated successfully',
+        statusCode: 200,
+      }
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof UnauthorizedException) {
-        throw error;
+        return {
+          statusCode: 404,
+          message: error.message,
+        }
       }
-      throw new BadRequestException(`Failed to update user: ${error.message}`);
+      return {
+        statusCode: 500,
+        message: 'Internal server error',
+      }
     }
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
     try {
-      return this.userService.remove(id);
+      this.userService.remove(id);
+      return {
+        message: 'User deleted successfully',
+        statusCode: 200,
+      }
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof UnauthorizedException) {
-        throw error;
+        return {
+          statusCode: 404,
+          message: error.message,
+        }
       }
-      throw new BadRequestException(`Failed to delete user: ${error.message}`);
+      return {
+        statusCode: 500,
+        message: 'Internal server error',
+      }
     }
   }
 }

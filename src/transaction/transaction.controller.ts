@@ -13,9 +13,15 @@ export class TransactionController {
       return this.transactionService.create(createTransactionDto);
     } catch (error) {
       if (error instanceof UnauthorizedException) {
-        throw error;
+        return {
+          statusCode: 401,
+          message: 'Unauthorized',
+        }
       }
-      throw new Error(`Failed to create transaction: ${error.message}`);
+      return {
+        statusCode: 400,
+        message: `Failed to create transaction: ${error.message}`,
+      };
     }
   }
 
@@ -25,21 +31,33 @@ export class TransactionController {
       return this.transactionService.balance();
     } catch (error) {
       if (error instanceof UnauthorizedException) {
-        throw error;
+        return {
+          statusCode: 401,
+          message: 'Unauthorized',
+        }
       }
-      throw new Error(`Failed to fetch balance: ${error.message}`);
+      return {
+        statusCode: 400,
+        message: `Failed to get balance: ${error.message}`,
+      };
     }
   }
 
   @Post('spend')
-  update( @Body() spendPointsDto: SpendPointsDto) {
+  spend(@Body() spendPointsDto: SpendPointsDto) {
     try {
       return this.transactionService.spend(spendPointsDto);
     } catch (error) {
       if (error instanceof UnauthorizedException) {
-        throw error;
+        return {
+          statusCode: 401,
+          message: 'Unauthorized',
+        }
       }
-      throw new Error(`Failed to spend points: ${error.message}`);
+      return {
+        statusCode: 400,
+        message: `Failed to spend points: ${error.message}`,
+      };
     }
   }
 }

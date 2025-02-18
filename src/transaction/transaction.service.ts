@@ -1,6 +1,5 @@
 import { Injectable, UnauthorizedException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
-import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { Transaction } from './entities/transaction.entity';
 import { v4 as uuidv4 } from 'uuid';
 import { SpendPointsDto } from './dto/spend-points.dto';
@@ -49,23 +48,60 @@ export class TransactionService {
   }
 
   /**
+   * Retrieves all transactions for the logged-in user
+   * @returns List of transactions for the logged-in user
+   */
+  findAll() {
+    try {
+      const loggedInUser = this.validateUserAuthentication('view transactions');
+      return this.transactions.filter(transaction => transaction.user === loggedInUser._id);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to fetch transactions: ${error.message}`);
+    }
+  }
+
+  /**
+   * Retrieves a transaction by ID
+   * @param id - Transaction ID
+   * @returns - Transaction object
+   */
+  findOne(id: string) {
+    try {
+      const transaction = this.transactions.find(transaction => transaction._id === id);
+      if (!transaction) {
+        throw new NotFoundException(`Transaction with ID ${id} not found`);
+      }
+      return transaction;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to fetch transaction: ${error.message}`);
+    }
+  }
+
+  /**
    * Spends points for the logged-in user
-   * @param spendPointsDto - Data for spending points
-   * @returns Object with payer points spent
+   * @param spendPointsDto 
+   * @returns Spending record - Map<string, number>
    */
   spend(spendPointsDto: SpendPointsDto) {
     const pointsToSpend = spendPointsDto.points;
+
+    if (!pointsToSpend || pointsToSpend <= 0) throw new Error("Points to spend must be greater than 0")
+
     const loggedInUser = this.validateUserAuthentication('spend points');
     let remainingPoints = pointsToSpend;
-
-    console.log("users current points: ", loggedInUser.totalPoints);
 
     if (loggedInUser.totalPoints < pointsToSpend) {
       throw new Error(`Insufficient points. Available: ${loggedInUser.totalPoints}, Requested: ${pointsToSpend}`);
     }
-    const sortedTransactions = this.getTransactionsOfUser(loggedInUser._id);
+    const sortedTransactions = this.getValidTransactions();
 
-    const { spendingRecord, remainingPoints: points } = this.processSpendingRequest(remainingPoints, sortedTransactions)
+    const { spendingRecord } = this.processSpendingRequest(remainingPoints, sortedTransactions)
 
     // format spendingRecord to json
     const spendingResults = this.formatSpendingResults(spendingRecord);
@@ -77,7 +113,7 @@ export class TransactionService {
   }
 
   /**
-   * Retrieves the balance for each payer for the logged-in user
+   * Retrieves balance for the logged-in user
    * @returns Object with payer balances
    */
   balance(): { [payer: string]: number } {
@@ -125,12 +161,11 @@ export class TransactionService {
   }
 
   /**
-   * Retrieves transactions sorted by timestamp
+   * Retrieves valid (non-deprecated) transactions sorted by timestamp
    * @returns Sorted array of valid transactions
    */
-  private getTransactionsOfUser(userId: string): Transaction[] {
+  private getValidTransactions(): Transaction[] {
     return [...this.transactions]
-      .filter(transaction => transaction.user === userId)
       .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
   }
 
@@ -147,14 +182,12 @@ export class TransactionService {
     // Process transactions in chronological order
     for (const transaction of sortedTransactions) {
       if (remainingPointsToSpend <= 0) break;
-      if (transaction.points == 0) continue; // Skip zero or negative point transactions
+      if (transaction.points == 0) continue; // Skip zero point transactions
 
       const pointsToDeduct = Math.min(transaction.points, remainingPointsToSpend);
 
       // Update spending record for this payer
-      console.log("before:", this.transactions);
       this.updateSpendingRecord(spendingRecord, transaction.payer, pointsToDeduct);
-      console.log("again: ", this.transactions);
 
       // Create a new negative transaction
       const negativeTransaction = {
@@ -168,7 +201,6 @@ export class TransactionService {
       this.transactions.push(negativeTransaction);
 
       remainingPointsToSpend -= pointsToDeduct;
-      console.log("Remaining Points: ", remainingPointsToSpend)
     }
 
     return { spendingRecord, remainingPoints: remainingPointsToSpend };
